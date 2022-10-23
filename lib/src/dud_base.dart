@@ -114,9 +114,9 @@ class DownloadTask extends Task {
 
     try {
       request = await httpClient.getUrl(Uri.parse(url));
-      request.headers
-        ..add(HttpHeaders.contentTypeHeader, "application/octet-stream")
-        ..add(HttpHeaders.rangeHeader, '$start');
+      request.headers..add(
+          HttpHeaders.contentTypeHeader, "application/octet-stream")..add(
+          HttpHeaders.rangeHeader, '$start');
 
       ///add user specific headers data
       headers.forEach((key, value) {
@@ -125,40 +125,52 @@ class DownloadTask extends Task {
 
       var httpResponse = await request.close();
 
-      if(!runOnce) {
+      if (!runOnce) {
         _fileSize = httpResponse.contentLength;
         runOnce = true;
       }
 
-      _file = File(savePath);
+      print(httpResponse.statusCode);
 
-      var downloadedFile = _file.openSync(mode: fileMode);
+      if(httpResponse.statusCode == 200) {
+        _file = File(savePath);
 
-      Completer completer = Completer<String>();
+        var downloadedFile = _file.openSync(mode: fileMode);
 
-      _subscription = httpResponse.listen((data) {
-        _downloadedByte += data.length;
+        Completer completer = Completer();
 
-        downloadedFile.writeFromSync(data);
+        _subscription = httpResponse.listen((data) {
+          _downloadedByte += data.length;
 
-        onProgress?.call(((_downloadedByte / _fileSize) * 100).toInt());
-      },
-        onDone: () {
-          downloadedFile.closeSync();
-          completer.complete(_file.path);
+          downloadedFile.writeFromSync(data);
+
+          onProgress?.call(((_downloadedByte / _fileSize) * 100).toInt());
         },
-        onError: (e) {
-          downloadedFile.closeSync();
-          completer.completeError(e);
-          _running = false;
-        },
-        cancelOnError: true,
-      )..onError((e) {
-        onError('Connection error');
+          onDone: () {
+            downloadedFile.closeSync();
+            completer.complete(_file.path);
+          },
+          onError: (e) {
+            downloadedFile.closeSync();
+            completer.completeError(e);
+            _running = false;
+          },
+          cancelOnError: true,
+        )
+          ..onError((e) {
+            onError('Connection error');
+            _running = false;
+          });
+
         _running = false;
-      });
-      onSuccess(await completer.future);
-      _running = false;
+        onSuccess(await completer.future);
+
+      } else {
+        _running = false;
+        onError(httpResponse.reasonPhrase);
+      }
+    } on FileSystemException {
+      onError('File system error');
     } catch (e) {
       onError('Host unreachable');
     }
