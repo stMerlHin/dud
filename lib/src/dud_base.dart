@@ -124,20 +124,20 @@ class DownloadTask extends Task {
       });
 
       var httpResponse = await request.close();
+      String errorMessage = httpResponse.reasonPhrase;
+      Task.responseAsString(httpResponse).then((value) => errorMessage = value);
 
       if (!runOnce) {
         _fileSize = httpResponse.contentLength;
         runOnce = true;
       }
 
-      print(httpResponse.statusCode);
+
 
       if(httpResponse.statusCode == 200) {
         _file = File(savePath);
 
         var downloadedFile = _file.openSync(mode: fileMode);
-
-        Completer completer = Completer();
 
         _subscription = httpResponse.listen((data) {
           _downloadedByte += data.length;
@@ -148,12 +148,11 @@ class DownloadTask extends Task {
         },
           onDone: () {
             downloadedFile.closeSync();
-            completer.complete(_file.path);
           },
           onError: (e) {
             downloadedFile.closeSync();
-            completer.completeError(e);
             _running = false;
+            throw e;
           },
           cancelOnError: true,
         )
@@ -163,11 +162,11 @@ class DownloadTask extends Task {
           });
 
         _running = false;
-        onSuccess(await completer.future);
+        onSuccess(_file.path);
 
       } else {
         _running = false;
-        onError(httpResponse.reasonPhrase);
+        onError(errorMessage);
       }
     } on FileSystemException {
       onError('File system error');

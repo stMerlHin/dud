@@ -7,7 +7,7 @@ void main() async {
       trustBadCertificate: true
   );
 
-  d.run(
+  await d.run(
       onProgress: (pr) async {
         // if(pr == 50) {
         //   await d.pause();
