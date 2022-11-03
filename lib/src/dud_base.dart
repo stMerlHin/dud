@@ -171,7 +171,7 @@ class DownloadTask extends Task {
     } on FileSystemException {
       onError('File system error');
     } catch (e) {
-      onError('Host unreachable');
+      onError(e.toString());
     }
   }
 
