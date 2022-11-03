@@ -125,14 +125,11 @@ class DownloadTask extends Task {
 
       var httpResponse = await request.close();
       String errorMessage = httpResponse.reasonPhrase;
-      Task.responseAsString(httpResponse).then((value) => errorMessage = value);
 
       if (!runOnce) {
         _fileSize = httpResponse.contentLength;
         runOnce = true;
       }
-
-
 
       if(httpResponse.statusCode == 200) {
         _file = File(savePath);
@@ -166,10 +163,12 @@ class DownloadTask extends Task {
 
       } else {
         _running = false;
-        onError(errorMessage);
+        await Task.responseAsString(httpResponse).then((value) => onError(value));
       }
     } on FileSystemException {
       onError('File system error');
+    } on SocketException {
+      onError('Host unreachable');
     } catch (e) {
       onError(e.toString());
     }

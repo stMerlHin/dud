@@ -2,9 +2,12 @@ import 'package:dud/dud.dart';
 
 void main() async {
   DownloadTask d = DownloadTask.create(
-      url: 'http://localhost/download/contracts/54861ea0-5176-11ed-b03f-fda8a29f250a.pdf',
-      savePath: 'download/contract.pdf',
-      trustBadCertificate: true
+      url: 'http://localhost/download/logo/07099bf0-44d0-11ed-9eed-8be08643a4a6.jpg',
+      savePath: 'cache/photo.jpg',
+      trustBadCertificate: true,
+      headers: {
+        'app_signature': '91a2dbf0-292d-11ed-91f1-4f98460f463ch'
+      }
   );
 
   await d.run(
@@ -17,11 +20,11 @@ void main() async {
         print('$pr% ${d.isRunning}');
       },
       onSuccess: (str) {
-        print('success');
         print(str);
-      }, onError: (str) {
-    print(str);
-  });
+      },
+      onError: (str) {
+        print(str);
+      });
 
   // Timer(Duration(seconds: 10), () {
   //   print('RESUMING');
